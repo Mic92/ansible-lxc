@@ -7,7 +7,11 @@ The plugin will use lxc-attach under the hood to connect to containers
 INSTALL
 =======
 
-1. Clone the plugin in your ansible directory
+* Install python2 version of lxc bindings:
+
+   - https://github.com/lxc/python2-lxc
+
+* Clone the plugin in your ansible directory
 
 ```
 $ mkdir -p /etc/ansible/connection_plugins/
@@ -21,9 +25,11 @@ $ mkdir -p /etc/ansible/connection_plugins/
 $ git submodule add git@github.com:Mic92/ansible-lxc.git /etc/ansible/connection_plugins/lxc
 ```
 
-2. Then add lxc directory to plugin search path in `ansible.cfg`:
+* Then add lxc directory to plugin search path in `ansible.cfg`:
 
-    connection_plugins = /usr/share/ansible_plugins/connection_plugins:/etc/ansible/connection_plugins/lxc
+```
+connection_plugins = /usr/share/ansible_plugins/connection_plugins:/etc/ansible/connection_plugins/lxc
+```
 
 USAGE
 =====
