@@ -12,7 +12,7 @@ from ansible.callbacks import vvv
 import lxc as _lxc
 
 class Connection(object):
-    ''' Local lxc based connections '''
+    """ Local lxc based connections """
 
     def _search_executable(self, executable):
         cmd = distutils.spawn.find_executable(executable)
@@ -47,7 +47,7 @@ class Connection(object):
         self.rootfs = self._root_fs()
 
     def connect(self, port=None):
-        ''' connect to the lxc; nothing to do here '''
+        """ connect to the lxc; nothing to do here """
 
         vvv("THIS IS A LOCAL LXC DIR", host=self.host)
 
@@ -55,12 +55,12 @@ class Connection(object):
 
     def _generate_cmd(self, executable, cmd):
         if executable:
-            return [self.lxc_attach, "--name", self.host, "--", executable, '-c', cmd]
+            return [self.lxc_attach, "--name", self.host, "--", executable, "-c", cmd]
         else:
-            return '%s --name %s -- %s' % (self.lxc_attach, self.host, cmd)
+            return "%s --name %s -- %s" % (self.lxc_attach, self.host, cmd)
 
-    def exec_command(self, cmd, tmp_path, sudo_user=None, sudoable=False, executable='/bin/sh', in_data=None, su=None, su_user=None):
-        ''' run a command on the chroot '''
+    def exec_command(self, cmd, tmp_path, sudo_user=None, sudoable=False, executable="/bin/sh", in_data=None, su=None, su_user=None):
+        """ run a command on the chroot """
 
         # We enter lxc as root so sudo stuff can be ignored
         local_cmd = self._generate_cmd(executable, cmd)
@@ -71,7 +71,7 @@ class Connection(object):
                         stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
-        return (p.returncode, '', stdout, stderr)
+        return (p.returncode, "", stdout, stderr)
 
     def _normalize_path(self, path, prefix):
         if not path.startswith(os.path.sep):
@@ -92,7 +92,7 @@ class Connection(object):
             raise errors.AnsibleError("failed to transfer file to %s" % out_path)
 
     def put_file(self, in_path, out_path):
-        ''' transfer a file from local to lxc '''
+        """ transfer a file from local to lxc """
 
         out_path = self._normalize_path(out_path, self.rootfs)
 
@@ -100,7 +100,7 @@ class Connection(object):
         self._copy(in_path, out_path)
 
     def fetch_file(self, in_path, out_path):
-        ''' fetch a file from lxc to local '''
+        """ fetch a file from lxc to local """
 
         in_path = self._normalize_path(in_path, self.rootfs)
 
@@ -108,5 +108,5 @@ class Connection(object):
         self._copy(in_path, out_path)
 
     def close(self):
-        ''' terminate the connection; nothing to do here '''
+        """ terminate the connection; nothing to do here """
         pass
