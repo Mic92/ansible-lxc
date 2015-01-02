@@ -4,6 +4,7 @@ import distutils.spawn
 import os,sys
 import subprocess
 import shutil
+import traceback
 from ansible import errors
 from ansible.callbacks import vvv
 
