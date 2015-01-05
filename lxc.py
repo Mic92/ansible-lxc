@@ -4,6 +4,8 @@ import distutils.spawn
 import os,sys
 import subprocess
 import shutil
+import traceback
+import re
 from ansible import errors
 from ansible.callbacks import vvv
 
@@ -20,6 +22,11 @@ class Connection(object):
 
     def _root_fs(self):
         rootfs = self.container.get_running_config_item("lxc.rootfs")
+        # overlayfs use the scheme:
+        #   overlayfs:/var/lib/lxc/LXC-Template-1404/rootfs:/var/lib/lxc/lxc-demo/delta0
+        match = re.match(r'^overlayfs:.+?rootfs:(.+)', rootfs)
+        if match:
+            rootfs = match.group(1)
         if not rootfs:
             raise errors.AnsibleError("rootfs not set in configuration for %s") % self.host
         return rootfs
