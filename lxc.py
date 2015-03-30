@@ -59,7 +59,7 @@ class Connection(object):
         else:
             return "%s --name %s -- %s" % (self.lxc_attach, self.host, cmd)
 
-    def exec_command(self, cmd, tmp_path, sudo_user=None, sudoable=False, executable="/bin/sh", in_data=None, su=None, su_user=None):
+    def exec_command(self, cmd, tmp_path, sudo_user=None, become_user=None, sudoable=False, executable="/bin/sh", in_data=None, su=None, su_user=None):
         """ run a command on the chroot """
 
         # We enter lxc as root so sudo stuff can be ignored
