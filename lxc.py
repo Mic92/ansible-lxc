@@ -9,6 +9,11 @@ import re
 from ansible import errors
 from ansible.callbacks import vvv
 
+try:  # py3
+    from shlex import quote
+except ImportError:  # py2
+    from pipes import quote
+
 import lxc as _lxc
 
 class Connection(object):
@@ -57,7 +62,7 @@ class Connection(object):
         if executable:
             return [self.lxc_attach, "--name", self.host, "--", executable, "-c", cmd]
         else:
-            return "%s --name %s -- %s" % (self.lxc_attach, self.host, cmd)
+            return "%s --name %s -- %s" % (self.lxc_attach, quote(self.host), cmd)
 
     def exec_command(self, cmd, tmp_path, sudo_user=None, become_user=None, sudoable=False, executable="/bin/sh", in_data=None, su=None, su_user=None):
         """ run a command on the chroot """
