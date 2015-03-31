@@ -62,7 +62,9 @@ class Connection(object):
     def exec_command(self, cmd, tmp_path, sudo_user=None, become_user=None, sudoable=False, executable="/bin/sh", in_data=None, su=None, su_user=None):
         """ run a command on the chroot """
 
-        # We enter lxc as root so sudo stuff can be ignored
+        if sudo_user:
+            cmd = 'sudo -u %s %s' % (sudo_user, cmd)
+            
         local_cmd = self._generate_cmd(executable, cmd)
 
         vvv("EXEC %s" % (local_cmd), host=self.host)
