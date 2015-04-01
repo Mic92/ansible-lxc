@@ -1,29 +1,19 @@
 from __future__ import absolute_import
 
 import distutils.spawn
-import os,sys
+import os,sys,io
 import subprocess
 import shutil
 import traceback
+import select
 import re
 from ansible import errors
 from ansible.callbacks import vvv
-
-try:  # py3
-    from shlex import quote
-except ImportError:  # py2
-    from pipes import quote
 
 import lxc as _lxc
 
 class Connection(object):
     """ Local lxc based connections """
-
-    def _search_executable(self, executable):
-        cmd = distutils.spawn.find_executable(executable)
-        if not cmd:
-            raise errors.AnsibleError("%s command not found in PATH") % executable
-        return cmd
 
     def _root_fs(self):
         rootfs = self.container.get_running_config_item("lxc.rootfs")
@@ -43,8 +33,6 @@ class Connection(object):
         self.port = port
         self.runner = runner
 
-        self.lxc_attach = self._search_executable("lxc-attach")
-
         self.container = _lxc.Container(host)
         if self.container.state == "STOPPED":
             raise errors.AnsibleError("%s is not running" % host)
@@ -58,27 +46,43 @@ class Connection(object):
 
         return self
 
-    def _generate_cmd(self, executable, cmd):
-        if executable:
-            return [self.lxc_attach, "--name", self.host, "--", executable, "-c", cmd]
-        else:
-            return "%s --name %s -- %s" % (self.lxc_attach, quote(self.host), cmd)
-
     def exec_command(self, cmd, tmp_path, sudo_user=None, become_user=None, sudoable=False, executable="/bin/sh", in_data=None, su=None, su_user=None):
         """ run a command on the chroot """
 
+        local_cmd = [cmd]
+        if executable:
+            local_cmd = [executable, "-c"] + local_cmd
         if sudo_user:
-            cmd = 'sudo -u "%s" -- %s' % (sudo_user, cmd)
-            
-        local_cmd = self._generate_cmd(executable, cmd)
+            local_cmd = ["sudo", "-u", sudo_user, "--"] + local_cmd
+
+        read_stdout, write_stdout = os.pipe()
+        read_stderr, write_stderr = os.pipe()
 
         vvv("EXEC %s" % (local_cmd), host=self.host)
-        p = subprocess.Popen(local_cmd, shell=isinstance(local_cmd, basestring),
-                        cwd=self.runner.basedir,
-                        stdin=subprocess.PIPE,
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = p.communicate()
-        return (p.returncode, "", stdout, stderr)
+
+        pid = self.container.attach(_lxc.attach_run_command, local_cmd,
+                stdout=write_stdout,
+                stderr=write_stderr)
+        os.close(write_stdout)
+        os.close(write_stderr)
+        fds = [read_stdout, read_stderr]
+
+        buf = { read_stdout: [], read_stderr: [] }
+        while len(fds) > 0:
+            ready_fds, _, _ = select.select(fds, [], [])
+            for fd in ready_fds:
+              data = os.read(fd, 32768)
+              if not data:
+                  fds.remove(fd)
+                  os.close(fd)
+              buf[fd].append(data)
+
+        (pid, returncode) = os.waitpid(pid, 0)
+
+        stdout = b"".join(buf[read_stdout])
+        stderr = b"".join(buf[read_stderr])
+
+        return (returncode, "", stdout, stderr)
 
     def _normalize_path(self, path, prefix):
         if not path.startswith(os.path.sep):
