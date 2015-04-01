@@ -63,7 +63,7 @@ class Connection(object):
         """ run a command on the chroot """
 
         if sudo_user:
-            cmd = 'sudo -u %s %s' % (sudo_user, cmd)
+            cmd = 'sudo -u "%s" -- %s' % (sudo_user, cmd)
             
         local_cmd = self._generate_cmd(executable, cmd)
 
