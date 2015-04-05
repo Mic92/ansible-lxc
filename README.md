@@ -2,7 +2,6 @@ ansible-lxc
 ===========
 
 Ansible Connection Plugin for lxc containers (https://linuxcontainers.org/)
-The plugin will use lxc-attach under the hood to connect to containers
 
 INSTALL
 =======
