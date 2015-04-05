@@ -16,8 +16,6 @@ class Connection(object):
     def __init__(self, runner, host, port, *args, **kwargs):
         self.has_pipelining = False
         self.host = host
-        # port is unused, since this is local
-        self.port = port
         self.runner = runner
 
         self.container = _lxc.Container(host)
