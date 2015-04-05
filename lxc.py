@@ -1,12 +1,10 @@
 from __future__ import absolute_import
 
-import distutils.spawn
-import os,sys,io
+import os, sys
 import subprocess
 import shutil
 import traceback
 import select
-import re
 from ansible import errors
 from ansible.callbacks import vvv
 
@@ -14,17 +12,6 @@ import lxc as _lxc
 
 class Connection(object):
     """ Local lxc based connections """
-
-    def _root_fs(self):
-        rootfs = self.container.get_running_config_item("lxc.rootfs")
-        # overlayfs use the scheme:
-        #   overlayfs:/var/lib/lxc/LXC-Template-1404/rootfs:/var/lib/lxc/lxc-demo/delta0
-        match = re.match(r'^overlayfs:.+?rootfs:(.+)', rootfs)
-        if match:
-            rootfs = match.group(1)
-        if not rootfs:
-            raise errors.AnsibleError("rootfs not set in configuration for %s") % self.host
-        return rootfs
 
     def __init__(self, runner, host, port, *args, **kwargs):
         self.has_pipelining = False
@@ -36,8 +23,6 @@ class Connection(object):
         self.container = _lxc.Container(host)
         if self.container.state == "STOPPED":
             raise errors.AnsibleError("%s is not running" % host)
-
-        self.rootfs = self._root_fs()
 
     def connect(self, port=None):
         """ connect to the lxc; nothing to do here """
@@ -84,39 +69,48 @@ class Connection(object):
 
         return (returncode, "", stdout, stderr)
 
-    def _normalize_path(self, path, prefix):
-        if not path.startswith(os.path.sep):
-            path = os.path.join(os.path.sep, path)
-        normpath = os.path.normpath(path)
-        return os.path.join(prefix, normpath[1:])
+    def put_file(self, in_path, out_path):
+        """ transfer a file from local to lxc """
 
-    def _copy(self, in_path, out_path):
+        vvv("PUT %s TO %s" % (in_path, out_path), host=self.host)
         if not os.path.exists(in_path):
             raise errors.AnsibleFileNotFound("file or module does not exist: %s" % in_path)
         try:
-            shutil.copyfile(in_path, out_path)
-        except shutil.Error:
+            src_file = open(in_path, "rb")
+        except IOError:
             traceback.print_exc()
-            raise errors.AnsibleError("failed to copy: %s and %s are the same" % (in_path, out_path))
+            raise errors.AnsibleError("failed to open file to %s" % in_path)
+
+        def write_file(args):
+            dst_file = open(out_path, 'wb')
+            shutil.copyfileobj(src_file, dst_file)
+        try:
+            self.container.attach_wait(write_file, None)
         except IOError:
             traceback.print_exc()
             raise errors.AnsibleError("failed to transfer file to %s" % out_path)
 
-    def put_file(self, in_path, out_path):
-        """ transfer a file from local to lxc """
-
-        out_path = self._normalize_path(out_path, self.rootfs)
-
-        vvv("PUT %s TO %s" % (in_path, out_path), host=self.host)
-        self._copy(in_path, out_path)
-
     def fetch_file(self, in_path, out_path):
         """ fetch a file from lxc to local """
 
-        in_path = self._normalize_path(in_path, self.rootfs)
-
         vvv("FETCH %s TO %s" % (in_path, out_path), host=self.host)
-        self._copy(in_path, out_path)
+        if not os.path.exists(in_path):
+            raise errors.AnsibleFileNotFound("file or module does not exist: %s" % in_path)
+
+        try:
+            dst_file = open(out_path, "wb")
+        except IOError:
+            traceback.print_exc()
+            raise errors.AnsibleError("failed to write to file %s" % out_path)
+
+        def write_file(args):
+            src_file = open(in_path, 'rb')
+            shutil.copyfileobj(src_file, dst_file)
+        try:
+            self.container.attach_wait(write_file, None)
+        except IOError:
+            traceback.print_exc()
+            raise errors.AnsibleError("failed to transfer file from %s to %s" % (in_path, out_path))
 
     def close(self):
         """ terminate the connection; nothing to do here """
