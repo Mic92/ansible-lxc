@@ -5,7 +5,7 @@ import subprocess
 import shutil
 import traceback
 import select
-from ansible import errors
+from ansible import errors, utils
 from ansible.callbacks import vvv
 
 import lxc as _lxc
@@ -32,11 +32,12 @@ class Connection(object):
     def exec_command(self, cmd, tmp_path, sudo_user=None, become_user=None, sudoable=False, executable="/bin/sh", in_data=None, su=None, su_user=None):
         """ run a command on the chroot """
 
+        if self.runner.become and sudoable:
+            cmd, prompt, success_key = utils.make_become_cmd(cmd, become_user, executable, self.runner.become_method, "", self.runner.become_exe)
+
         local_cmd = [cmd]
         if executable:
             local_cmd = [executable, "-c"] + local_cmd
-        if sudo_user:
-            local_cmd = ["sudo", "-u", sudo_user, "--"] + local_cmd
 
         read_stdout, write_stdout = os.pipe()
         read_stderr, write_stderr = os.pipe()
