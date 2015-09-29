@@ -45,6 +45,7 @@ class Connection(object):
         vvv("EXEC %s" % (local_cmd), host=self.host)
 
         pid = self.container.attach(_lxc.attach_run_command, local_cmd,
+                env_policy=_lxc.LXC_ATTACH_CLEAR_ENV,
                 stdout=write_stdout,
                 stderr=write_stderr)
 
