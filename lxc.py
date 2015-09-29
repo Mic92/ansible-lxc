@@ -47,6 +47,10 @@ class Connection(object):
         pid = self.container.attach(_lxc.attach_run_command, local_cmd,
                 stdout=write_stdout,
                 stderr=write_stderr)
+
+        if pid == -1:
+            raise errors.AnsibleError("failed to attach to container %s", self.host)
+
         os.close(write_stdout)
         os.close(write_stderr)
         fds = [read_stdout, read_stderr]
