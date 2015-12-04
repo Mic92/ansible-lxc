@@ -98,8 +98,6 @@ class Connection(object):
         """ fetch a file from lxc to local """
 
         vvv("FETCH %s TO %s" % (in_path, out_path), host=self.host)
-        if not os.path.exists(in_path):
-            raise errors.AnsibleFileNotFound("file or module does not exist: %s" % in_path)
 
         try:
             dst_file = open(out_path, "wb")
