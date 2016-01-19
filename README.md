@@ -1,7 +1,7 @@
 ansible-lxc
 ===========
 
-Ansible Connection Plugin for lxc containers (https://linuxcontainers.org/)
+Ansible Connection Plugin to deploy to local lxc containers (https://linuxcontainers.org/)
 
 INSTALL
 =======
@@ -33,6 +33,6 @@ connection_plugins = /usr/share/ansible_plugins/connection_plugins:/etc/ansible/
 USAGE
 =====
 
-In your hosts file use container name (`examplecontainer` in this case) as hostname and `ansible_connection` to lxc:
+In your hosts file on the server running lxc use the lxc container name (`examplecontainer` in this case) as hostname and set `ansible_connection` to lxc:
 
     examplecontainer ansible_connection=lxc
