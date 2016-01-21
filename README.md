@@ -3,6 +3,9 @@ ansible-lxc
 
 Ansible Connection Plugin to deploy to local lxc containers (https://linuxcontainers.org/)
 
+This version requires at least ansible 2.0.
+If you want to use ansible with older versions checkout [v1.0](https://github.com/Mic92/ansible-lxc/tree/v1.0)
+
 INSTALL
 =======
 
