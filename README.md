@@ -1,6 +1,8 @@
 ansible-lxc
 ===========
 
+**This plugin is part now of ansible 2.1** ([see](https://github.com/ansible/ansible/commit/7a533406f9783b6b9c749b364637db5882247b90))
+
 Ansible Connection Plugin to deploy to local lxc containers (https://linuxcontainers.org/)
 
 This version requires at least ansible 2.0.
